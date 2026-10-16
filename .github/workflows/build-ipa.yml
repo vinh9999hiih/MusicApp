@@ -1,0 +1,75 @@
+name: Build Unsigned IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      CODE_SIGNING_ALLOWED: NO
+      CODE_SIGNING_REQUIRED: NO
+      CODE_SIGN_IDENTITY: ""
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Apply Swift compatibility patch
+        run: python3 ./scripts/patch_package.py
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build and Archive .app
+        run: |
+          xcodebuild \
+            -scheme MusicApp \
+            -project MusicApp.xcodeproj \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath ${{ runner.temp }}/MusicApp.xcarchive \
+            clean archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Create Payload and Pack IPA
+        run: |
+          mkdir -p ${{ runner.temp }}/Payload
+          cp -R ${{ runner.temp }}/MusicApp.xcarchive/Products/Applications/MusicApp.app ${{ runner.temp }}/Payload/
+          cd ${{ runner.temp }}
+          zip -r MusicApp-Unsigned.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicApp-Unsigned.ipa
+          path: ${{ runner.temp }}/MusicApp-Unsigned.ipa
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "MusicApp iOS Unsigned IPA (Build ${{ github.run_number }})"
+          body: |
+            ### 🎵 MusicApp iOS Unsigned IPA
+            - **Build Number**: ${{ github.run_number }}
+            - **Target**: generic/platform=iOS (Physical Device ARM64)
+            - **Code Signing**: Unsigned (No $99 Apple Developer Account required)
+            - **Compatible Sideloaders**: TrollStore, AltStore, ESign, KSign, SideStore
+          files: ${{ runner.temp }}/MusicApp-Unsigned.ipa
+          draft: false
+          prerelease: false

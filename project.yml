@@ -1,0 +1,31 @@
+name: MusicApp
+options:
+  bundleIdPrefix: com.vinh9999hiih
+  deploymentTarget:
+    iOS: "15.0"
+targets:
+  MusicApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: MusicApp
+    info:
+      path: MusicApp/Info.plist
+      properties:
+        CFBundleDisplayName: "MusicApp"
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vinh9999hiih.MusicApp
+        PRODUCT_NAME: MusicApp
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+        ENABLE_BITCODE: "NO"
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: "NO"
+        INFOPLIST_FILE: MusicApp/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
